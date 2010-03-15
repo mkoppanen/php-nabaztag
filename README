@@ -1,0 +1,28 @@
+INTRODUCTION
+=====================
+This is a php extension which interacts with Nabaztags (Those cute rabbits, see http://www.nabaztag.com).
+
+
+USAGE INFORMATION
+====================
+Once installed, you can use it like this:
+
+/** You can find these values on the nabaztag site when you register your nabaztag **/
+$serial = "xxxxxxxxx";
+$token = "xxxxxxxxxx";
+$nabaztag = new Nabaztag($serial, $token);
+
+/* text-to-speech */
+$nabaztag->tts("Hello world");
+
+/* other methods */
+string   $nabaztag->getToken();
+string   $nabaztag->getSerial();
+boolean  $nabaztag->setToken(string $token);
+boolean  $nabaztag->setSerial(string $serial);
+
+
+Further more, it registers a php.ini setting "nabaztag.api_url" which holds, well, the api url which is used to communicate with your nabaztag.
+
+// Currently returns "http://api.nabaztag.com/vl/FR/api.jsp?"
+echo ini_get("nabaztag.api_url");
