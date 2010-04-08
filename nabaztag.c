@@ -25,11 +25,11 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/standard/php_smart_str.h"
 #include "php_nabaztag.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(nabaztag);
 
-#define NABAZTAG_SET_MSG(intern, message) snprintf(intern->message, 512, message);
+ZEND_DECLARE_MODULE_GLOBALS(nabaztag);
 
 zend_class_entry *nabaztag_ce_nabaztag;
 static zend_object_handlers nabaztag_object_handlers;
@@ -90,8 +90,7 @@ ZEND_GET_MODULE(nabaztag)
 #endif
 
 PHP_INI_BEGIN()
-    PHP_INI_ENTRY("nabaztag.api_url", "http://api.nabaztag.com/vl/FR/api.jsp?",
-        PHP_INI_ALL, NULL)
+    PHP_INI_ENTRY("nabaztag.api_url", "http://api.nabaztag.com/vl/FR/api.jsp?", PHP_INI_ALL, NULL)
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(nabaztag)
@@ -143,6 +142,7 @@ static void php_nabaztag_object_init(php_nabaztag_obj *intern TSRMLS_DC)
 {
     intern->serial = NULL;
     intern->token = NULL;
+	intern->message = NULL;
 }
 
 static void nabaztag_object_free_storage_nabaztag(void *object TSRMLS_DC)
@@ -153,9 +153,19 @@ static void nabaztag_object_free_storage_nabaztag(void *object TSRMLS_DC)
         return;
     }
 
-    efree(intern->serial);
-    efree(intern->token);
-    zend_object_std_dtor(&intern->zo TSRMLS_CC);
+	if (intern->serial) {
+    	efree(intern->serial);
+    }
+
+	if (intern->token) {
+		efree(intern->token);
+	}
+	
+	if (intern->message) {
+		efree(intern->message);
+	}
+	
+	zend_object_std_dtor(&intern->zo TSRMLS_CC);
     efree(intern);
 }
 
@@ -198,12 +208,12 @@ static zend_object_value nabaztag_object_clone_nabaztag(zval *this_ptr TSRMLS_DC
 
 static void nabaztag_register_classes(TSRMLS_D)
 {
-  zend_class_entry nabaztag_ce;
-  INIT_CLASS_ENTRY(nabaztag_ce, "Nabaztag", nabaztag_class_methods);
-  nabaztag_ce.create_object = nabaztag_object_new_nabaztag;
-  nabaztag_ce_nabaztag = zend_register_internal_class_ex(&nabaztag_ce, NULL, NULL TSRMLS_CC);
-  memcpy(&nabaztag_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-  nabaztag_object_handlers.clone_obj = nabaztag_object_clone_nabaztag;
+	zend_class_entry nabaztag_ce;
+	INIT_CLASS_ENTRY(nabaztag_ce, "Nabaztag", nabaztag_class_methods);
+	nabaztag_ce.create_object = nabaztag_object_new_nabaztag;
+	nabaztag_ce_nabaztag = zend_register_internal_class_ex(&nabaztag_ce, NULL, NULL TSRMLS_CC);
+	memcpy(&nabaztag_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	nabaztag_object_handlers.clone_obj = nabaztag_object_clone_nabaztag;
 }
 /* }}} */
 
@@ -229,12 +239,14 @@ PHP_METHOD(Nabaztag, __construct)
    Returns the serial number for your nabaztag */
 PHP_METHOD(Nabaztag, getSerial)
 {
+	php_nabaztag_obj *naobj;
+	
     if (zend_parse_parameters_none() == FAILURE) {
         return;
     }
 
-    php_nabaztag_obj *nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    RETURN_STRING(nabobj->serial, 1);
+    naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
+    RETURN_STRING(naobj->serial, 1);
 }
 /* }}} */
 
@@ -242,6 +254,7 @@ PHP_METHOD(Nabaztag, getSerial)
    Sets the serial number for your nabaztag */
 PHP_METHOD(Nabaztag, setSerial)
 {
+	php_nabaztag_obj *naobj;
     char *serial;
     int serial_len;
 
@@ -249,10 +262,13 @@ PHP_METHOD(Nabaztag, setSerial)
         return;
     }
 
-    php_nabaztag_obj *nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    nabobj->serial = erealloc(nabobj->serial, serial_len + 1);
-    strcpy(nabobj->serial, serial);
+    naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
 
+	if (naobj->serial) {
+		efree(naobj->serial);
+	}
+
+    naobj->serial = estrdup(serial);
     RETURN_TRUE;
 }
 /* }}} */
@@ -261,12 +277,14 @@ PHP_METHOD(Nabaztag, setSerial)
    Returns the token for your nabaztag */
 PHP_METHOD(Nabaztag, getToken)
 {
+	php_nabaztag_obj *naobj;
+	
     if (zend_parse_parameters_none() == FAILURE) {
         return;
     }
 
-    php_nabaztag_obj *nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    RETURN_STRING(nabobj->token, 1);
+    naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
+    RETURN_STRING(naobj->token, 1);
 }
 /* }}} */
 
@@ -274,6 +292,7 @@ PHP_METHOD(Nabaztag, getToken)
    Sets the token for your nabaztag */
 PHP_METHOD(Nabaztag, setToken)
 {
+	php_nabaztag_obj *naobj;
     char *token;
     int token_len;
 
@@ -281,10 +300,13 @@ PHP_METHOD(Nabaztag, setToken)
         return;
     }
 
-    php_nabaztag_obj *nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    nabobj->token = erealloc(nabobj->token, token_len + 1);
-    strcpy(nabobj->token, token);
+	naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
 
+	if (naobj->token) {
+		efree(naobj->token);
+	}
+
+    naobj->token = estrdup(token);
     RETURN_TRUE;
 }
 /* }}} */
@@ -293,15 +315,17 @@ PHP_METHOD(Nabaztag, setToken)
    Returns the message from the last executed method */
 PHP_METHOD(Nabaztag, getLastMessage)
 {
+	php_nabaztag_obj *naobj;
+	
     if (zend_parse_parameters_none() == FAILURE) {
         return;
     }
 
-    php_nabaztag_obj *nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    if(strlen(nabobj->message)) {
-        RETURN_STRING(nabobj->message, 1);
+    naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
+    
+	if (naobj->message) {
+        RETURN_STRING(naobj->message, 1);
     }
-
     return;
 }
 /* }}} */
@@ -310,53 +334,81 @@ PHP_METHOD(Nabaztag, getLastMessage)
    Send a string to the text-to-speech system */
 PHP_METHOD(Nabaztag, tts)
 {
-   php_stream *stream;
-   char *string, *url, retval[512];
-   int string_len;
-   int options = ENFORCE_SAFE_MODE | STREAM_USE_URL | REPORT_ERRORS;
-   php_nabaztag_obj *nabobj;
-   xmlDocPtr docp;
+	php_stream *stream;
+	char *string, *url;
+	int string_len;
+	int options = ENFORCE_SAFE_MODE | STREAM_USE_URL | REPORT_ERRORS;
+	php_nabaztag_obj *naobj;
+	xmlDocPtr docp;
+	zend_bool rc;
+
+	smart_str retval = {0};
 
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &string_len)) {
         return;
     }
 
-    nabobj = zend_object_store_get_object(getThis() TSRMLS_CC);
-    ap_php_asprintf(&url, "%ssn=%s&token=%s&tts=%s", INI_STR("nabaztag.api_url"), nabobj->serial, nabobj->token, string);
-    stream = php_stream_open_wrapper(url, "r", options, NULL);
-    free(url);
+    naobj = (php_nabaztag_obj *)zend_object_store_get_object(getThis() TSRMLS_CC);
+    (void) spprintf(&url, 0, "%ssn=%s&token=%s&tts=%s", INI_STR("nabaztag.api_url"), naobj->serial, naobj->token, string);
+
+	stream = php_stream_open_wrapper(url, "r", options, NULL);
+    efree(url);
+
+	if (naobj->message) {
+		efree(naobj->message);
+		naobj->message = NULL;
+	}
 
     if (!stream) {
         RETURN_FALSE;
     }
 
-    memcpy(retval, "", sizeof(""));
-    while(!php_stream_eof(stream)) {
+    while (!php_stream_eof(stream)) {
         char buf[1024];
-
         if (php_stream_gets(stream, buf, sizeof(buf))) {
-            /* Check for buffer overflows */
-            if (strlcat(retval, buf, sizeof(retval)) >= sizeof(retval)) {
-                php_stream_close(stream);
-                RETURN_FALSE;
-            }
+			smart_str_appends(&retval, buf);
         } else {
             break;
         }
     }
+	smart_str_0(&retval);
     php_stream_close(stream);
-    
-    long xml_opts = 0;
-    docp = xmlReadMemory(retval, strlen(retval), NULL, NULL, xml_opts);
-    char *status = estrdup((char *)docp->children->children->children->content);
-    char *message = estrdup((char *)docp->children->children->next->children->content);
-    xmlFreeDoc(docp);
 
-    NABAZTAG_SET_MSG(nabobj, message);
+	if (retval.len > 0) {
+		long xml_opts = 0;
+		char *status, *message;
+		
+	    docp = xmlReadMemory(retval.c, retval.len, NULL, NULL, xml_opts);
+		smart_str_free(&retval);
+		
+		if (!docp) {
+			return;
+		}
+	
+		status = (char *) docp->children->children->children->content;
+		
+		if (!status) {
+			xmlFreeDoc(docp);
+			return;
+		}
+		
+		message = (char *) docp->children->children->next->children->content; 
+	
+		if (!message) {
+			xmlFreeDoc(docp);
+			return;
+		}
 
-    RETVAL_BOOL(!strcmp(status, NABAZTAG_STATUS_TTSSENT));
-    efree(status);
-    efree(message);
+		naobj->message = estrdup(message);
+		rc             = (!strcmp(status, NABAZTAG_STATUS_TTSSENT) == 0);
+	    
+		xmlFreeDoc(docp);
+	} else {
+		rc = 0;
+	}
+ 
+	smart_str_free(&retval);
+	RETURN_BOOL(rc);
 }
 /* }}} */
 

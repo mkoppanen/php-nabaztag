@@ -61,15 +61,14 @@ ZEND_BEGIN_MODULE_GLOBALS(nabaztag)
     char *api_url;
 ZEND_END_MODULE_GLOBALS(nabaztag)
 
-typedef struct _php_nabaztag_obj php_nabaztag_obj;
-struct _php_nabaztag_obj {
+typedef struct _php_nabaztag_obj {
 	zend_object   zo;
 	char         *serial;
 	char         *token;
 
     /* Store last message here */
-    char         message[512];
-};
+    char *message;
+} php_nabaztag_obj;
 
 
 /* Return statuses */
